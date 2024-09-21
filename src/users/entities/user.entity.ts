@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
+import { Device } from 'src/device/entities/device.entity';
 
 @Entity('users')
 export class User {
@@ -38,4 +39,7 @@ export class User {
     @UpdateDateColumn()
     updatedAt: Date;
 
+    // relations
+    @OneToMany(() => Device, device => device.user)
+    devices: Device[];
 }
