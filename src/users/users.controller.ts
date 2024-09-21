@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, UseGuards, Query, DefaultValuePipe, ParseIntPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, UseGuards, Query, DefaultValuePipe, ParseIntPipe, UseInterceptors, ClassSerializerInterceptor, ValidationPipe, UsePipes } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserResponseDto } from './dto/user-response.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -17,6 +17,7 @@ import { Roles } from 'src/auth/guards/roles.decorator';
  * @class
  */
 @ApiTags('Users')
+@UsePipes(new ValidationPipe({ whitelist: true }))
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
@@ -57,7 +58,7 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth()
+
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Return all users', type: [UserResponseDto] })
@@ -87,7 +88,7 @@ export class UsersController {
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+
   @ApiResponse({ status: 200, description: 'Return the user', type: UserResponseDto })
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     const user = await this.usersService.findOne(id);
@@ -110,7 +111,7 @@ export class UsersController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+
   @ApiResponse({ status: 200, description: 'User updated successfully', type: UserResponseDto })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     const user = await this.usersService.update(id, updateUserDto);
@@ -135,7 +136,7 @@ export class UsersController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth()
+
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async remove(@Param('id') id: string): Promise<void> {
     await this.usersService.remove(id);

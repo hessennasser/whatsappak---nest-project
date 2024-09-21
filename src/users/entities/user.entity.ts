@@ -38,16 +38,4 @@ export class User {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @BeforeInsert()
-    @BeforeUpdate()
-    async hashPassword() {
-        if (this.password) {
-            this.password = await bcrypt.hash(this.password, 10);
-        }
-    }
-
-    // Helper method to check password
-    async comparePassword(attempt: string): Promise<boolean> {
-        return bcrypt.compare(attempt, this.password);
-    }
 }

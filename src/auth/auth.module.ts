@@ -4,10 +4,10 @@ import { UsersModule } from '../users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { jwtConstants } from './constants';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
+import { JwtService } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -19,7 +19,8 @@ import { User } from 'src/users/entities/user.entity';
       signOptions: { expiresIn: '60m' },
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtService],
   controllers: [AuthController],
+  exports: [JwtService]
 })
 export class AuthModule { }

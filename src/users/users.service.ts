@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -24,8 +25,14 @@ export class UsersService {
       throw new ConflictException('Email or username already exists');
     }
 
-    const newUser = this.userRepository.create(createUserDto);
-    return this.userRepository.save(newUser);
+    const hashedPassword = await this.hashPassword(createUserDto.password);
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
+    await this.userRepository.save(newUser);
+    return newUser;
   }
 
   async findAll(options: { page: number; limit: number }): Promise<{ data: User[]; total: number; page: number; lastPage: number }> {
@@ -51,12 +58,8 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) {
-      throw new NotFoundException(`User with email "${email}" not found`);
-    }
-    return user;
+  async findByEmail(email: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ where: { email } });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -80,11 +83,23 @@ export class UsersService {
 
   async changePassword(id: string, oldPassword: string, newPassword: string): Promise<User> {
     const user = await this.findOne(id);
-    const isPasswordValid = await user.comparePassword(oldPassword);
+    const isPasswordValid = await this.comparePassword(oldPassword, user.password);
     if (!isPasswordValid) {
       throw new ConflictException('Old password is incorrect');
     }
     user.password = newPassword;
     return this.userRepository.save(user);
+  }
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10);
+  }
+
+  async comparePassword(attempt: string, hashedPassword: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(attempt, hashedPassword);
+    } catch (error) {
+      console.error('Error comparing passwords:', error);
+      return false;
+    }
   }
 }

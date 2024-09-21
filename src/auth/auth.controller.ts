@@ -1,9 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 /**
  * AuthController
@@ -13,6 +13,7 @@ import { ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
  * @class
  */
 @ApiTags('Authentication')
+@UsePipes(new ValidationPipe({ whitelist: true }))
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
@@ -44,15 +45,14 @@ export class AuthController {
      * @apiresponse {200} User successfully logged in
      * @apiresponse {401} Unauthorized - Invalid credentials
      * 
-     * @security LocalAuthGuard
+     * @security JTWAuthGuard
      */
-    @UseGuards(LocalAuthGuard)
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({ status: 200, description: 'User successfully logged in' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
+        return this.authService.login(loginDto.email, loginDto.password);
     }
 
     /**
@@ -67,9 +67,9 @@ export class AuthController {
      * 
      * @security JWT
      */
+    @UseGuards(JwtAuthGuard)
     @Post('logout')
-    @ApiBearerAuth()
-    @ApiResponse({ status: 200, description: 'User successfully logged out' })
+
     async logout(@Req() req) {
         return this.authService.logout(req.user);
     }
